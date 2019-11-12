@@ -1,0 +1,101 @@
+`timescale 1ns/1ps
+
+//////////////////////////////////////////////////////////////////////////////////
+// Company:
+// Engineer:
+//
+// Create Date:    
+// Design Name:
+// Module Name:    alu
+// Project Name:
+// Target Devices:
+// Tool versions:
+// Description:
+//
+// Dependencies:
+//
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+//
+//////////////////////////////////////////////////////////////////////////////////
+
+module alu(
+		    rst_n,         // negative reset            (input)
+            src1,          // 32 bits source 1          (input)
+            src2,          // 32 bits source 2          (input)
+            ALU_control,   // 4 bits ALU control input  (input)
+            result,        // 32 bits result            (output)
+            zero,          // 1 bit when the output is 0, zero must be set (output)
+            cout,          // 1 bit carry out           (output)
+            overflow       // 1 bit overflow            (output)
+            );
+
+input           rst_n;
+input  [32-1:0] src1;
+input  [32-1:0] src2;
+input   [4-1:0] ALU_control;
+
+output [32-1:0] result;
+output          zero;
+output          cout;
+output          overflow;
+
+wire [32-1:0]   res;
+wire [32-1:0]   res2;
+wire c, v, set;
+
+//reg    [32-1:0] result;
+//reg             zero;
+//reg             cout;
+//reg             overflow;
+
+alu32 alu1(
+    .src1 (src1),
+    .src2 (src2),
+    .less (set),
+    .A_invert (ALU_control[3]),
+    .B_invert (ALU_control[2]),
+    .cin (ALU_control[2]),
+    .operation (ALU_control[1:0]),
+    .result (res),
+    .cout (c),
+    .overflow (v)
+);
+
+alu32 alu2(
+    .src1 (src1),
+    .src2 (src2),
+    .less (1'b0),
+    .A_invert (1'b0),
+    .B_invert (1'b1),
+    .cin (1'b0),
+    .operation (2'b10),
+    .result (res2),
+    .cout (),
+    .overflow ()
+);
+
+
+assign less = (ALU_control == 4'b0111)? 
+		(src1[31] == 0 && src2[31] == 1)? 0:
+		(src1[31] == 1 && src2[31] == 1)? 1: 
+		(res2[31] == 1)? 1 : 0 : 0;
+
+
+//always@(*) 
+//begin
+//	if(rst_n) begin
+//		result <= res;
+//        zero <= ~|result;
+//		cout <= c;
+//		overflow <= v;
+//	end
+//end
+
+assign result = res;
+assign zero = ~|res;
+assign cout = (ALU_control == 4'b1100 || ALU_control == 4'b0111)? 0 : c;
+assign overflow = v;
+
+endmodule
